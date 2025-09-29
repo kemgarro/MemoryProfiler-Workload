@@ -29,6 +29,34 @@ endif()
 # Include directories
 include_directories(include)
 
+# --------------------------------------------------
+# Memory Profiler Integration
+# --------------------------------------------------
+
+# Add profiler library
+add_library(memory_profiler STATIC
+    profiler/src/BlockInfo.cpp
+    profiler/src/Callbacks.cpp
+    profiler/src/CallbacksRegistration.cpp
+    profiler/src/MemoryTracker.cpp
+    profiler/src/OperatorOverrides.cpp
+    profiler/src/ProfilerAPI.cpp
+    profiler/src/Serializer.cpp
+    profiler/src/SocketClient.cpp
+)
+
+# Include profiler headers
+target_include_directories(memory_profiler PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/profiler/include
+)
+
+# Set profiler C++ standard
+target_compile_features(memory_profiler PUBLIC cxx_std_17)
+
+# --------------------------------------------------
+# Workload Executable
+# --------------------------------------------------
+
 # Source files
 set(SOURCES
     src/main.cpp
@@ -40,10 +68,17 @@ set(SOURCES
     src/VectorChurn.cpp
     src/TreeFactory.cpp
     src/Utilities.cpp
+    src/Node.cpp
 )
 
 # Create executable
 add_executable(mp_workload ${SOURCES})
+
+# Link profiler library
+target_link_libraries(mp_workload PRIVATE memory_profiler)
+
+# Include profiler headers in workload
+target_include_directories(mp_workload PRIVATE profiler/include)
 
 # Set output directory
 set_target_properties(mp_workload PROPERTIES

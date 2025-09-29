@@ -1,6 +1,7 @@
 #include "WorkloadConfig.hpp"
 #include "Utilities.hpp"
 #include "Types.hpp"
+#include "Node.hpp"
 #include <vector>
 #include <stdexcept>
 #include <iostream>

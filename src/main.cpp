@@ -8,6 +8,10 @@
 #include <chrono>
 #include <functional>
 #include <map>
+#include "ProfilerAPI.hpp"
+#include "ProfilerNew.hpp"
+#include "SocketClient.hpp"
+#include "CallbacksRegistration.hpp"
 
 // Conditional profiler API inclusion
 #ifdef MP_USE_API
@@ -17,6 +21,7 @@
 #else
 #define MP_HAVE_API 0
 #endif
+static mp::SocketClient client;
 #else
 #define MP_HAVE_API 0
 #endif
@@ -84,7 +89,7 @@ void workerThread(const WorkloadConfig& config, uint32_t thread_id,
 /**
  * Snapshot thread for periodic profiler API calls
  */
-void snapshotThread(const WorkloadConfig& /*config*/, std::atomic<bool>& /*should_stop*/) {
+void snapshotThread(const WorkloadConfig& config, std::atomic<bool>& should_stop) {
 #if MP_HAVE_API
     while (!should_stop.load()) {
         try {
@@ -193,7 +198,14 @@ int main(int argc, char* argv[]) {
 #endif
         std::cout << std::endl;
     }
-    
+
+#ifdef MP_USE_API
+    if (MP_HAVE_API) {
+        mp::install_callbacks_with_memorytracker();
+        client.start("127.0.0.1", 7777); // conecta con la GUI
+    }
+#endif
+
     // Start timing
     mp::Timer total_timer;
     std::atomic<bool> should_stop{false};
@@ -241,5 +253,10 @@ int main(int argc, char* argv[]) {
         std::cout << "Workload completed in " << total_timer.elapsedMillis() << "ms\n";
     }
     
+#ifdef MP_USE_API
+    if (MP_HAVE_API) {
+        client.stop(); // cierra la conexión con la GUI
+    }
+#endif
     return 0;
 }
