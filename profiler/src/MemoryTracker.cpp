@@ -1,6 +1,6 @@
-#include "MemoryTracker.hpp"
+#include "../include/MemoryTracker.hpp"
 #include <new> // std::nothrow (por si se usa en el futuro)
-#include "ReentryGuard.hpp"  // para ScopedHookGuard
+#include "../include/ReentryGuard.hpp"  // para ScopedHookGuard
 
 namespace mp {
 
@@ -37,6 +37,7 @@ void MemoryTracker::onAlloc(void* p, std::size_t sz, const char* type,
         return;
     }
 
+    // Crear registro con toda la información capturada
     AllocationRecord rec;
     rec.ptr          = p;              // Direccion de memoria
     rec.size         = sz;             // Tamaño en bytes
@@ -57,6 +58,8 @@ void MemoryTracker::onAlloc(void* p, std::size_t sz, const char* type,
     ++active_allocs_;
     total_bytes_  += sz;
     active_bytes_ += sz;
+
+    // Si superamos el máximo histórico, actualizarlo
     if (active_bytes_ > peak_bytes_) {
         peak_bytes_ = active_bytes_;
     }
@@ -66,17 +69,24 @@ void MemoryTracker::onAlloc(void* p, std::size_t sz, const char* type,
 
 // Se llama cada vez que se libera memoria
 void MemoryTracker::onFree(void* p, bool /*isArray*/) noexcept {
-    if (!p) return;
+    if (!p) return; // delete nullptr es válido y no hace nada
 
     std::lock_guard<std::mutex> lock(mu_);
 
+    // Buscar el puntero en la tabla de bloques vivos
     auto it = live_.find(p);
     if (it != live_.end()) {
-        const auto sz = it->second.size;
-        if (active_bytes_ >= sz) active_bytes_ -= sz; // seguridad
+        const auto sz = it->second.size; // Obtener tamaño del bloque
+
+        // Restar bytes activos (con seguridad para evitar underflow)
+        if (active_bytes_ >= sz) active_bytes_ -= sz;
+
+        // Decrementar contador de asignaciones activas
         if (active_allocs_ > 0)  --active_allocs_;
         live_.erase(it); // eliminamos el registro
     }
+    // Si el puntero no estaba registrado, no hacer nada
+    // (puede ser memoria asignada antes de activar el profiler)
     // Importante: no lanzar excepciones aqui
 }
 
@@ -126,4 +136,3 @@ void MemoryTracker::resetForTesting() {
 }
 
 } // namespace mp
-

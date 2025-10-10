@@ -1,4 +1,4 @@
-#include "Serializer.hpp"
+#include "../include/Serializer.hpp"
 #include <string>
 #include <cstdint>   // uint64_t, uintptr_t
 
@@ -16,12 +16,12 @@ namespace mp {
 
   // Escapa caracteres especiales para que un string sea valido en JSON
   static inline std::string json_escape(const std::string& s){
-    std::string out; 
+    std::string out;
     out.reserve(s.size()+8);
     for (char c : s) {
-      if (c=='\\' || c=='\"') { 
-        out.push_back('\\'); 
-        out.push_back(c); 
+      if (c=='\\' || c=='\"') {
+        out.push_back('\\');
+        out.push_back(c);
       }
       else if (c=='\n') out += "\\n";
       else out.push_back(c);
@@ -64,7 +64,10 @@ namespace mp {
       j += "\"alloc_id\":"+u64_to_str(b.alloc_id)+",";
       j += "\"thread_id\":"+std::to_string(b.thread_id)+",";
       j += "\"t_ns\":"+u64_to_str(b.t_ns)+",";
-      j += "\"callsite\":\""+json_escape(b.callsite)+"\"}";
+      j += "\"callsite\":\""+json_escape(b.callsite)+"\",";
+      j += "\"file\":\""+json_escape(b.file)+"\",";
+      j += "\"line\":"+std::to_string(b.line)+",";
+      j += "\"type_name\":\""+json_escape(b.type_name)+"\"}";
     }
     j += "]}";
     return j;

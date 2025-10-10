@@ -89,7 +89,7 @@ void workerThread(const WorkloadConfig& config, uint32_t thread_id,
 /**
  * Snapshot thread for periodic profiler API calls
  */
-void snapshotThread(const WorkloadConfig& /*config*/, std::atomic<bool>& /*should_stop*/) {
+void snapshotThread(const WorkloadConfig& config, std::atomic<bool>& should_stop) {
 #if MP_HAVE_API
     while (!should_stop.load()) {
         try {

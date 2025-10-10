@@ -12,63 +12,65 @@
 
 namespace mp {
 
-// Estructura solicitada
-struct AllocationRecord {
-    void*        ptr;
-    std::size_t  size;
-    const char*  type_name;      // puede ser nullptr
-    std::uint64_t timestamp_ns;
-    std::uint32_t thread_id;
-    const char*  file;           // puede ser nullptr
-    int          line;           // puede ser 0
-    bool         is_array;
-};
+    // Estructura solicitada
+    struct AllocationRecord {
+        void*        ptr;
+        std::size_t  size;
+        const char*  type_name;      // puede ser nullptr
+        std::uint64_t timestamp_ns;
+        std::uint32_t thread_id;
+        const char*  file;           // puede ser nullptr
+        int          line;           // puede ser 0
+        bool         is_array;
+    };
 
-class MemoryTracker {
-public:
-    static MemoryTracker& instance();
+    class MemoryTracker {
+    public:
+        static MemoryTracker& instance();
 
-    // Registros
-    void onAlloc(void* p, std::size_t sz, const char* type,
-                 const char* file, int line, bool isArray);
+        // Registros
+        void onAlloc(void* p, std::size_t sz, const char* type,
+                     const char* file, int line, bool isArray);
 
-    void onFree(void* p, bool isArray) noexcept;
+        void onFree(void* p, bool isArray) noexcept;
 
-    // Snapshot de bloques vivos
-    std::vector<AllocationRecord> snapshotLive() const;
+        // Snapshot de bloques vivos
+        std::vector<AllocationRecord> snapshotLive() const;
 
-    // M�tricas
-    std::size_t activeBytes() const;
-    std::size_t peakBytes() const;
-    std::size_t totalAllocs() const;
-    std::size_t activeAllocs() const;
+        // Métricas
+        std::size_t activeBytes() const;
+        std::size_t peakBytes() const;
+        std::size_t totalAllocs() const;
+        std::size_t activeAllocs() const;
 
-    // Por ahora no-op (dejado para pruebas futuras)
-    void resetForTesting();
+        // Por ahora no-op (dejado para pruebas futuras)
+        void resetForTesting();
 
-    // No copiable/movable
-    MemoryTracker(const MemoryTracker&) = delete;
-    MemoryTracker& operator=(const MemoryTracker&) = delete;
-    MemoryTracker(MemoryTracker&&) = delete;
-    MemoryTracker& operator=(MemoryTracker&&) = delete;
+        // No copiable/movable
+        MemoryTracker(const MemoryTracker&) = delete;
+        MemoryTracker& operator=(const MemoryTracker&) = delete;
+        MemoryTracker(MemoryTracker&&) = delete;
+        MemoryTracker& operator=(MemoryTracker&&) = delete;
 
-private:
-    MemoryTracker() = default;
-    ~MemoryTracker() = default;
+    private:
+        MemoryTracker() = default;
+        ~MemoryTracker() = default;
 
-    // Helpers
-    static std::uint64_t nowNs();
-    static std::uint32_t thisThreadId();
+        // Helpers
+        static std::uint64_t nowNs();
+        static std::uint32_t thisThreadId();
 
-private:
-    mutable std::mutex mu_;
-    std::unordered_map<void*, AllocationRecord> live_;
+        mutable std::mutex mu_; // Protección para multithreading
 
-    std::size_t total_allocs_  = 0;
-    std::size_t active_allocs_ = 0;
-    std::size_t total_bytes_   = 0; // (por ahora no se expone, pero se mantiene)
-    std::size_t active_bytes_  = 0;
-    std::size_t peak_bytes_    = 0;
-};
+        // MAPA PRINCIPAL: ptr → información completa
+        std::unordered_map<void*, AllocationRecord> live_;
+
+        // MÉTRICAS ACUMULADAS
+        std::size_t total_allocs_  = 0; // Total de new ejecutados
+        std::size_t active_allocs_ = 0; // new sin delete correspondiente
+        std::size_t total_bytes_   = 0; // (por ahora no se expone, pero se mantiene)
+        std::size_t active_bytes_  = 0; // Bytes en uso AHORA
+        std::size_t peak_bytes_    = 0; // Máximo histórico
+    };
 
 } // namespace mp

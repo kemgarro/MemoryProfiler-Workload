@@ -1,4 +1,4 @@
-#include "Callbacks.hpp"
+#include "../include/Callbacks.hpp"
 #include <mutex>
 
 namespace mp {
@@ -11,7 +11,7 @@ namespace mp {
 
   // Funcion que inicializa todos los callbacks con funciones vacias (no hacen nada)
   static void init_noop() {
-    g_cb.onAlloc    = [](void*, std::size_t, const char*){};        // No hace nada al asignar memoria
+    g_cb.onAlloc    = [](void*, std::size_t, const char*, const char*, int, bool){}; // No hace nada al asignar memoria
     g_cb.onFree     = [](void*){};                                  // No hace nada al liberar memoria
     g_cb.bytesInUse = []{ return std::size_t(0); };                 // Siempre retorna 0
     g_cb.peakBytes  = []{ return std::size_t(0); };                 // Siempre retorna 0
@@ -30,7 +30,7 @@ namespace mp {
     g_cb = c;
 
     // Si alguno de los callbacks no fue asignado, se reemplaza con version vacia
-    if (!g_cb.onAlloc)    g_cb.onAlloc    = [](void*, std::size_t, const char*){};
+    if (!g_cb.onAlloc)    g_cb.onAlloc = [](void*, std::size_t, const char*, const char*, int, bool){};
     if (!g_cb.onFree)     g_cb.onFree     = [](void*){};
     if (!g_cb.bytesInUse) g_cb.bytesInUse = []{ return std::size_t(0); };
     if (!g_cb.peakBytes)  g_cb.peakBytes  = []{ return std::size_t(0); };

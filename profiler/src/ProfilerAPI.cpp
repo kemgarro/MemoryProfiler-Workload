@@ -1,6 +1,6 @@
-#include "ProfilerAPI.hpp"
-#include "Callbacks.hpp"
-#include "Serializer.hpp"
+#include "../include/ProfilerAPI.hpp"
+#include "../include/Callbacks.hpp"
+#include "../include/Serializer.hpp"
 #include <atomic>
 
 // Flag global atomico que indica si el profiler esta habilitado

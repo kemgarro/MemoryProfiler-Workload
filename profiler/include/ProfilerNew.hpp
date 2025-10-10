@@ -11,3 +11,8 @@
 // Macros para fijar manualmente el callsite y el nombre de tipo
 #define MP_SET_CALLSITE()   ::mp::setCallsite(__FILE__, __LINE__)
 #define MP_SET_TYPENAME(T)  ::mp::setTypeName(typeid(T).name())
+
+// Macro para crear un arreglo con registro del callsite y tipo
+// Uso: MP_NEW_ARRAY_FT(T, count)
+// Esto registra el archivo, línea y nombre de tipo, luego hace new[]
+#define MP_NEW_ARRAY_FT(T, count) ( mp::ScopedCallsite(__FILE__, __LINE__, typeid(T).name()), new T[count] )

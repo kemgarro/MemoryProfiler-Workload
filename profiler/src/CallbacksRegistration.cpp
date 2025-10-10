@@ -1,8 +1,8 @@
-#include "Callbacks.hpp"
-#include "MemoryTracker.hpp"
-#include "BlockInfo.hpp"
-#include "Callsite.hpp"
-#include "ReentryGuard.hpp"
+#include "../include/Callbacks.hpp"
+#include "../include/MemoryTracker.hpp"
+#include "../include/BlockInfo.hpp"
+#include "../include/Callsite.hpp"
+#include "../include/ReentryGuard.hpp"
 #include <atomic>
 #include <vector>
 #include <string>
@@ -21,20 +21,9 @@ void install_callbacks_with_memorytracker() {
     mp::Callbacks cb{}; // Se crea un objeto Callbacks vacio
 
     // Callback que se llama cada vez que se asigna memoria
-    cb.onAlloc = [](void* p, std::size_t sz, const char* /*cs*/) {
-        // Obtenemos la informacion del lugar donde se hizo la llamada (archivo, linea, tipo)
-        auto cs = mp::currentCallsite();
-        const bool is_array = false;
-
-        // Registramos la asignacion en el MemoryTracker
-        mp::MemoryTracker::instance().onAlloc(
-            p, sz, cs.type_name, cs.file, cs.line, is_array
-        );
-
-        // Aumentamos el contador global de asignaciones
+    cb.onAlloc = [](void* p, std::size_t sz, const char* type, const char* file, int line, bool is_array) {
+        mp::MemoryTracker::instance().onAlloc(p, sz, type, file, line, is_array);
         (void)g_alloc_id.fetch_add(1, std::memory_order_relaxed);
-
-        // Limpiamos el callsite despues de usarlo
         mp::clearCallsite();
     };
 
@@ -74,11 +63,21 @@ void install_callbacks_with_memorytracker() {
             b.thread_id = r.thread_id;                        // Hilo que hizo la asignacion
             b.t_ns      = r.timestamp_ns;                     // Tiempo en nanosegundos
 
-            // Si tenemos informacion de archivo y linea, la guardamos
+            // Si tenemos información de archivo y línea, la guardamos
             if (r.file && *r.file) {
+                b.file = std::string(r.file);
+                b.line = r.line;
                 b.callsite = std::string(r.file) + ":" + std::to_string(r.line);
             } else {
-                b.callsite = "?:0"; // Si no hay informacion, se pone un valor por defecto
+                b.file = "?";
+                b.line = 0;
+                b.callsite = "?:0"; // Si no hay información, se pone un valor por defecto
+            }
+
+            if (r.type_name && *r.type_name) {
+                b.type_name = std::string(r.type_name);
+            } else {
+                b.type_name = "unknown";
             }
 
             // Agregamos el bloque a la lista
